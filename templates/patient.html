@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedVault — Patient Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo"><div class="logo-icon">＋</div><span class="logo-text">MedVault</span></div>
+  <nav class="nav">
+    <a href="{{ url_for('index') }}"   class="nav-item"><span class="nav-icon">◈</span><span>Dashboard</span></a>
+    <a href="{{ url_for('patient') }}" class="nav-item active"><span class="nav-icon">◉</span><span>Patient Profile</span></a>
+    <a href="{{ url_for('records') }}" class="nav-item"><span class="nav-icon">◧</span><span>Records</span></a>
+    <a href="{{ url_for('health') }}"  class="nav-item"><span class="nav-icon">◎</span><span>Health Summary</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="patient-chip">
+      <div class="chip-avatar">{{ patient.name[0].upper() if patient else '?' }}</div>
+      <div class="chip-info">
+        <span class="chip-name">{{ patient.name if patient else 'No Profile' }}</span>
+        <span class="chip-tag">{{ patient.blood_group if patient and patient.blood_group else 'Set up profile →' }}</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="page-header">
+    <div><p class="header-sub">Manage</p><h1 class="page-title">Patient Profile</h1></div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <div class="form-layout">
+    <section class="card form-card" style="--delay:0.1s">
+      <div class="card-header"><h2 class="card-title">Personal Information</h2></div>
+
+      <div class="form-avatar-row">
+        <div class="form-avatar" id="formAvatar">{{ patient.name[0].upper() if patient else '?' }}</div>
+        <span style="font-size:0.82rem;color:var(--text3)">Initial updates as you type your name</span>
+      </div>
+
+      <form method="POST" action="{{ url_for('patient') }}">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" name="name" class="form-input" id="inputName"
+                   placeholder="e.g. Arjun Sharma"
+                   value="{{ patient.name if patient else '' }}"
+                   oninput="updatePreview()" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Age</label>
+            <input type="number" name="age" class="form-input" id="inputAge"
+                   placeholder="e.g. 28" min="1" max="120"
+                   value="{{ patient.age if patient else '' }}"
+                   oninput="updatePreview()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Gender</label>
+            <select name="gender" class="form-input" id="inputGender" onchange="updatePreview()">
+              <option value="">Select gender</option>
+              <option {{ 'selected' if patient and patient.gender == 'Male' }}>Male</option>
+              <option {{ 'selected' if patient and patient.gender == 'Female' }}>Female</option>
+              <option {{ 'selected' if patient and patient.gender == 'Other' }}>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Blood Group</label>
+            <select name="blood_group" class="form-input" id="inputBlood" onchange="updatePreview()">
+              <option value="">Select blood group</option>
+              {% for bg in ['A+','A−','B+','B−','AB+','AB−','O+','O−'] %}
+              <option {{ 'selected' if patient and patient.blood_group == bg }}>{{ bg }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Emergency Contact</label>
+          <input type="tel" name="emergency_contact" class="form-input" id="inputEmergency"
+                 placeholder="+91 98765 43210"
+                 value="{{ patient.emergency_contact if patient else '' }}"
+                 oninput="updatePreview()">
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Save Profile</button>
+          <a href="{{ url_for('index') }}" class="btn-ghost">Cancel</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="card preview-card" style="--delay:0.2s">
+      <div class="card-header"><h2 class="card-title">Profile Preview</h2></div>
+      <div class="profile-preview">
+        <div class="preview-avatar" id="previewAvatar">{{ patient.name[0].upper() if patient else '?' }}</div>
+        <h3 class="preview-name"  id="previewName">{{ patient.name if patient else '—' }}</h3>
+        <div class="preview-blood" id="previewBlood">{{ patient.blood_group if patient and patient.blood_group else '—' }}</div>
+        <div class="preview-details">
+          <div class="preview-row"><span class="preview-key">Age</span><span class="preview-val" id="previewAge">{{ (patient.age|string + ' yrs') if patient and patient.age else '—' }}</span></div>
+          <div class="preview-row"><span class="preview-key">Gender</span><span class="preview-val" id="previewGender">{{ patient.gender if patient and patient.gender else '—' }}</span></div>
+          <div class="preview-row"><span class="preview-key">Emergency</span><span class="preview-val" id="previewEmergency">{{ patient.emergency_contact if patient and patient.emergency_contact else '—' }}</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+function updatePreview() {
+  const n  = document.getElementById('inputName').value || '—';
+  const ag = document.getElementById('inputAge').value;
+  const ge = document.getElementById('inputGender').value;
+  const bl = document.getElementById('inputBlood').value;
+  const em = document.getElementById('inputEmergency').value;
+  document.getElementById('previewName').textContent    = n;
+  document.getElementById('previewAvatar').textContent  = n !== '—' ? n[0].toUpperCase() : '?';
+  document.getElementById('formAvatar').textContent     = n !== '—' ? n[0].toUpperCase() : '?';
+  document.getElementById('previewAge').textContent     = ag ? ag + ' yrs' : '—';
+  document.getElementById('previewGender').textContent  = ge || '—';
+  document.getElementById('previewBlood').textContent   = bl || '—';
+  document.getElementById('previewEmergency').textContent = em || '—';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedVault — Health Summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo"><div class="logo-icon">＋</div><span class="logo-text">MedVault</span></div>
+  <nav class="nav">
+    <a href="{{ url_for('index') }}"   class="nav-item"><span class="nav-icon">◈</span><span>Dashboard</span></a>
+    <a href="{{ url_for('patient') }}" class="nav-item"><span class="nav-icon">◉</span><span>Patient Profile</span></a>
+    <a href="{{ url_for('records') }}" class="nav-item"><span class="nav-icon">◧</span><span>Records</span></a>
+    <a href="{{ url_for('health') }}"  class="nav-item active"><span class="nav-icon">◎</span><span>Health Summary</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="patient-chip">
+      <div class="chip-avatar">{{ patient.name[0].upper() if patient else '?' }}</div>
+      <div class="chip-info">
+        <span class="chip-name">{{ patient.name if patient else 'No Profile' }}</span>
+        <span class="chip-tag">{{ patient.blood_group if patient and patient.blood_group else 'Set up profile →' }}</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="page-header">
+    <div><p class="header-sub">Overview</p><h1 class="page-title">Health Summary</h1></div>
+    {% if patient %}
+    <a href="{{ url_for('export_summary') }}" class="btn-primary">⬇ Export PDF</a>
+    {% endif %}
+  </header>
+
+  {% if not patient %}
+  <div class="flash flash-error">
+    Please <a href="{{ url_for('patient') }}" style="color:inherit;font-weight:600">set up your patient profile</a> before adding health information.
+  </div>
+  {% endif %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <div class="health-grid">
+
+    <!-- MEDICINES -->
+    <section class="card health-card" style="--delay:0.1s">
+      <div class="card-header">
+        <div class="health-card-title">
+          <div class="health-icon meds-icon">💊</div>
+          <h2 class="card-title">Current Medicines</h2>
+        </div>
+        <span class="count-badge">{{ medicines|length }}</span>
+      </div>
+      {% if patient %}
+      <form method="POST" action="{{ url_for('health') }}" class="health-input-row">
+        <input type="hidden" name="action" value="add_medicine">
+        <input type="text" name="medicine_text" class="form-input"
+               placeholder="e.g. Paracetamol 500mg" required>
+        <button type="submit" class="btn-add">Add</button>
+      </form>
+      {% endif %}
+      <div class="health-tags">
+        {% if medicines %}
+          {% for m in medicines %}
+          <div class="health-tag tag-med">
+            <span>{{ m.medicine_text }}</span>
+            {% if patient %}
+            <form method="POST" action="{{ url_for('health') }}" style="display:inline">
+              <input type="hidden" name="action" value="delete_medicine">
+              <input type="hidden" name="item_id" value="{{ m.id }}">
+              <button type="submit" class="tag-remove">✕</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-tags">No medicines added yet</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- PAST DISEASES -->
+    <section class="card health-card" style="--delay:0.2s">
+      <div class="card-header">
+        <div class="health-card-title">
+          <div class="health-icon disease-icon">🩺</div>
+          <h2 class="card-title">Past Diseases</h2>
+        </div>
+        <span class="count-badge">{{ diseases|length }}</span>
+      </div>
+      {% if patient %}
+      <form method="POST" action="{{ url_for('health') }}" class="health-input-row">
+        <input type="hidden" name="action" value="add_disease">
+        <input type="text" name="disease_name" class="form-input"
+               placeholder="e.g. Typhoid (2021)" required>
+        <button type="submit" class="btn-add">Add</button>
+      </form>
+      {% endif %}
+      <div class="health-tags">
+        {% if diseases %}
+          {% for d in diseases %}
+          <div class="health-tag tag-disease">
+            <span>{{ d.disease_name }}</span>
+            {% if patient %}
+            <form method="POST" action="{{ url_for('health') }}" style="display:inline">
+              <input type="hidden" name="action" value="delete_disease">
+              <input type="hidden" name="item_id" value="{{ d.id }}">
+              <button type="submit" class="tag-remove">✕</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-tags">No past diseases added yet</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- ALLERGIES -->
+    <section class="card health-card" style="--delay:0.3s">
+      <div class="card-header">
+        <div class="health-card-title">
+          <div class="health-icon allergy-icon">⚠️</div>
+          <h2 class="card-title">Allergies</h2>
+        </div>
+        <span class="count-badge">{{ allergies|length }}</span>
+      </div>
+      {% if patient %}
+      <form method="POST" action="{{ url_for('health') }}" class="health-input-row">
+        <input type="hidden" name="action" value="add_allergy">
+        <input type="text" name="allergy_name" class="form-input"
+               placeholder="e.g. Penicillin" required>
+        <button type="submit" class="btn-add">Add</button>
+      </form>
+      {% endif %}
+      <div class="health-tags">
+        {% if allergies %}
+          {% for a in allergies %}
+          <div class="health-tag tag-allergy">
+            <span>{{ a.allergy_name }}</span>
+            {% if patient %}
+            <form method="POST" action="{{ url_for('health') }}" style="display:inline">
+              <input type="hidden" name="action" value="delete_allergy">
+              <input type="hidden" name="item_id" value="{{ a.id }}">
+              <button type="submit" class="tag-remove">✕</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-tags">No allergies added yet</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- OVERVIEW CARD -->
+    <section class="card health-summary-card" style="--delay:0.4s">
+      <div class="card-header"><h2 class="card-title">Quick Overview</h2></div>
+      <div class="summary-overview">
+        <div class="overview-stat">
+          <span class="overview-num">{{ medicines|length }}</span>
+          <span class="overview-label">Medicines</span>
+        </div>
+        <div class="overview-divider"></div>
+        <div class="overview-stat">
+          <span class="overview-num">{{ diseases|length }}</span>
+          <span class="overview-label">Diseases</span>
+        </div>
+        <div class="overview-divider"></div>
+        <div class="overview-stat">
+          <span class="overview-num">{{ allergies|length }}</span>
+          <span class="overview-label">Allergies</span>
+        </div>
+      </div>
+      <div class="summary-export-card">
+        <p class="export-hint">Export a complete health summary report with patient info, medicines, diseases, allergies, and recent records.</p>
+        {% if patient %}
+        <a href="{{ url_for('export_summary') }}" class="btn-primary" style="width:100%;display:flex;justify-content:center;margin-top:1rem">
+          ⬇ Export as PDF
+        </a>
+        {% else %}
+        <p style="font-size:0.82rem;color:var(--text3);margin-top:0.8rem">Set up your profile first to export.</p>
+        {% endif %}
+      </div>
+    </section>
+
+  </div>
+</main>
+
+</body>
+</html>

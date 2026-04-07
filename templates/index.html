@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedVault — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">＋</div>
+    <span class="logo-text">MedVault</span>
+  </div>
+  <nav class="nav">
+    <a href="{{ url_for('index') }}"   class="nav-item active"><span class="nav-icon">◈</span><span>Dashboard</span></a>
+    <a href="{{ url_for('patient') }}" class="nav-item"><span class="nav-icon">◉</span><span>Patient Profile</span></a>
+    <a href="{{ url_for('records') }}" class="nav-item"><span class="nav-icon">◧</span><span>Records</span></a>
+    <a href="{{ url_for('health') }}"  class="nav-item"><span class="nav-icon">◎</span><span>Health Summary</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="patient-chip">
+      <div class="chip-avatar">{{ patient.name[0].upper() if patient else '?' }}</div>
+      <div class="chip-info">
+        <span class="chip-name">{{ patient.name if patient else 'No Profile' }}</span>
+        <span class="chip-tag">{{ patient.blood_group if patient and patient.blood_group else 'Set up profile →' }}</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="page-header">
+    <div>
+      <p class="header-sub">Overview</p>
+      <h1 class="page-title">Dashboard</h1>
+    </div>
+    <a href="{{ url_for('records') }}" class="btn-primary">+ Upload Record</a>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <section class="stats-grid">
+    <div class="stat-card" style="--delay:0s">
+      <div class="stat-label">Total Records</div>
+      <div class="stat-num">{{ records|length }}</div>
+      <div class="stat-bar"><div class="stat-fill" style="width:{{ [records|length * 10, 100]|min }}%"></div></div>
+    </div>
+    <div class="stat-card" style="--delay:0.1s">
+      <div class="stat-label">Categories</div>
+      <div class="stat-num">4</div>
+      <div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div>
+    </div>
+    <div class="stat-card" style="--delay:0.2s">
+      <div class="stat-label">Medicines</div>
+      <div class="stat-num">{{ meds|length }}</div>
+      <div class="stat-bar"><div class="stat-fill" style="width:{{ [meds|length * 20, 100]|min }}%"></div></div>
+    </div>
+    <div class="stat-card" style="--delay:0.3s">
+      <div class="stat-label">Allergies</div>
+      <div class="stat-num">{{ allergies|length }}</div>
+      <div class="stat-bar"><div class="stat-fill" style="width:{{ [allergies|length * 25, 100]|min }}%"></div></div>
+    </div>
+  </section>
+
+  <div class="dashboard-grid">
+    <section class="card" style="--delay:0.4s">
+      <div class="card-header">
+        <h2 class="card-title">Recent Records</h2>
+        <a href="{{ url_for('records') }}" class="card-link">View all →</a>
+      </div>
+      {% if records %}
+        {% for rec in records %}
+        <div class="record-row">
+          <div class="record-icon">
+            {% if rec.cat_name == 'Prescription' %}💊{% elif rec.cat_name == 'Lab Report' %}🧪{% elif rec.cat_name == 'Scan' %}📷{% else %}📁{% endif %}
+          </div>
+          <div class="record-info">
+            <span class="record-name">{{ rec.file_name }}</span>
+            <span class="record-meta">{{ rec.upload_date[:10] }} · {{ rec.cat_name }}</span>
+          </div>
+          <span class="record-tag {{ rec.cat_name.lower().replace(' ', '-') }}">{{ rec.cat_name }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">◧</div>
+          <p>No records uploaded yet.</p>
+          <a href="{{ url_for('records') }}" class="btn-ghost">Upload your first record</a>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card" style="--delay:0.5s">
+      <div class="card-header">
+        <h2 class="card-title">Health Snapshot</h2>
+        <a href="{{ url_for('health') }}" class="card-link">Edit →</a>
+      </div>
+      <div class="snapshot-section">
+        <div class="snapshot-row">
+          <span class="snapshot-label">💊 Medicines</span>
+          <div>
+            {% if meds %}{% for m in meds[:3] %}<span class="health-tag tag-med">{{ m.medicine_text }}</span>{% endfor %}
+            {% if meds|length > 3 %}<span class="tag-empty">+{{ meds|length - 3 }} more</span>{% endif %}
+            {% else %}<span class="tag-empty">None added</span>{% endif %}
+          </div>
+        </div>
+        <div class="snapshot-row">
+          <span class="snapshot-label">🩺 Diseases</span>
+          <div>
+            {% if diseases %}{% for d in diseases[:3] %}<span class="health-tag tag-disease">{{ d.disease_name }}</span>{% endfor %}
+            {% if diseases|length > 3 %}<span class="tag-empty">+{{ diseases|length - 3 }} more</span>{% endif %}
+            {% else %}<span class="tag-empty">None added</span>{% endif %}
+          </div>
+        </div>
+        <div class="snapshot-row">
+          <span class="snapshot-label">⚠️ Allergies</span>
+          <div>
+            {% if allergies %}{% for a in allergies[:3] %}<span class="health-tag tag-allergy">{{ a.allergy_name }}</span>{% endfor %}
+            {% if allergies|length > 3 %}<span class="tag-empty">+{{ allergies|length - 3 }} more</span>{% endif %}
+            {% else %}<span class="tag-empty">None added</span>{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="patient-card">
+        <div class="patient-card-inner">
+          <div class="patient-avatar">{{ patient.name[0].upper() if patient else '?' }}</div>
+          <div class="patient-info">
+            <h3>{{ patient.name if patient else 'No Profile Set' }}</h3>
+            {% if patient %}
+            <div class="patient-meta">
+              {% if patient.age %}<span>{{ patient.age }} yrs</span>{% endif %}
+              {% if patient.gender %}<span>{{ patient.gender }}</span>{% endif %}
+              {% if patient.emergency_contact %}<span>{{ patient.emergency_contact }}</span>{% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <div class="blood-badge">{{ patient.blood_group if patient and patient.blood_group else '—' }}</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card full-width" style="--delay:0.6s">
+    <div class="card-header"><h2 class="card-title">Records by Category</h2></div>
+    <div class="category-grid">
+      <div class="cat-pill"><div class="cat-dot" style="background:var(--c1)"></div><span class="cat-name">Prescription</span><span class="cat-count">{{ cat_counts.get('Prescription', 0) }}</span></div>
+      <div class="cat-pill"><div class="cat-dot" style="background:var(--c2)"></div><span class="cat-name">Lab Report</span><span class="cat-count">{{ cat_counts.get('Lab Report', 0) }}</span></div>
+      <div class="cat-pill"><div class="cat-dot" style="background:var(--c3)"></div><span class="cat-name">Scan</span><span class="cat-count">{{ cat_counts.get('Scan', 0) }}</span></div>
+      <div class="cat-pill"><div class="cat-dot" style="background:var(--c4)"></div><span class="cat-name">Other</span><span class="cat-count">{{ cat_counts.get('Other', 0) }}</span></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
