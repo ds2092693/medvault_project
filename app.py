@@ -287,6 +287,41 @@ def export_summary():
     pdf_path = export_summary_pdf(patient, medicines, diseases, allergies, recent)
     return send_file(pdf_path, as_attachment=True, download_name="health_summary.pdf")
 
+# ───────────── AI (FAKE - NO API NEEDED) ─────────────
+from flask import jsonify
+import time
+
+@app.route('/ai-health', methods=['POST'])
+def ai_health():
+    data = request.get_json()
+    prompt = data.get("prompt", "").lower()
+
+    time.sleep(1)
+
+    result = """**Health Overview:** Your condition looks stable.
+
+**Tips:** Eat healthy, stay hydrated, and exercise regularly.
+
+**Advice:** Regular checkups are recommended.
+
+**Positive Note:** You are managing your health well!"""
+
+    return jsonify({"result": result})
+
+
+@app.route('/ai-summary', methods=['POST'])
+def ai_summary():
+    data = request.get_json()
+
+    time.sleep(1)
+
+    result = """**Record Summary:** This record contains important medical details.
+
+**Advice:** Review carefully and consult your doctor.
+
+**Tip:** Keep all reports organized."""
+
+    return jsonify({"result": result})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
